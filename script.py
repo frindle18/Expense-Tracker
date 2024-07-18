@@ -24,6 +24,7 @@ class ExpenseTracker:
         self.account = 'Main'
         self.account_history = []
         self.account_log = []
+        self.shorthands = {}
 
     def set_transaction_type(self, transaction_type):
         self.transaction_type_history.append(self.transaction_type)
@@ -71,7 +72,14 @@ class ExpenseTracker:
         else:
             print('No account to redo')
 
+    def add_shorthand(self, shorthand, transaction):
+        self.shorthands[shorthand] = transaction
+        print(f'Shorthand {shorthand} added: {transaction}')
+
     def parse_transaction(self, command):
+        if command in self.shorthands:
+            command = self.shorthands[command]
+
         pattern = re.compile(r'([+-])?(\d+)\s(\d+[.\/-]\d+[.\/-]\d+\s)?(\w+)\s(\w+\s)?(".*")?')
         match = pattern.match(command)
 
@@ -87,17 +95,37 @@ class ExpenseTracker:
 
 def main():
     et = ExpenseTracker()
-    et.set_transaction_type('-')
-    et.set_account('HDFC')
+    
+    while True:
+        command = input("$ ").strip()
 
-    et.parse_transaction('-100 13-07-2024 Tea IDBI "Stop drinking tea"')
-    et.parse_transaction('100 Tea "Stop drinking tea"')
+        if command == 'exit':
+            break
 
-    et.set_account('IDBI')
-    et.undo_set_account()
-    et.undo_set_account()
-    et.redo_set_account()
-    et.redo_set_account()
+        elif command.startswith('-'):
+            if command.startswith('-stt'):
+                _, transaction_type = command.split()
+                et.set_transaction_type(transaction_type)
+
+            elif command == '-utt':
+                et.undo_set_transaction_type()
+
+            elif command == '-rtt':
+                et.redo_set_transaction_type()
+
+            elif command.startswith('-sa'):
+                _, account = command.split()
+                et.set_account(account)
+
+            elif command == '-ua':
+                et.undo_set_account()
+
+            elif command == '-ra':
+                et.redo_set_account()
+
+            elif command.startswith('-ash'):
+                _, shorthand, transaction = command.split(maxsplit=2)
+                et.add_shorthand(shorthand, transaction)
 
 if __name__ == '__main__':
     main()
